@@ -3,13 +3,6 @@ const express = require('express');
 const app = express();
 const Joi = require('@hapi/joi');
 
-const customerJoiSchema = Joi.object({
-    firstName: Joi.string().required().min(4).max(20),
-    lastName: Joi.string().required().min(3).max(20),
-    age: Joi.number().required(),
-    isMarried: Joi.boolean()
-})
-
 mongoose.connect('mongodb://localhost/hapijoi', 
     {
         useNewUrlParser: true, 
@@ -27,6 +20,13 @@ const customerSchema = new mongoose.Schema({
 
 const CustomerModel = mongoose.model('customer', customerSchema);
 
+const customerJoiSchema = Joi.object({
+    lastName: Joi.string().min(4).max(20).required(),
+    firstName: Joi.string().min(3).max(20).required(),
+    age: Joi.number().required(),
+    isMarried: Joi.boolean()
+})
+
 app.use(express.json())
 
 app.get('/', (req, res) => res.send('Hello World!'))
@@ -39,7 +39,7 @@ app.get('/customers', async (req, res)=>{
 app.post('/customer', async (req, res)=>{
     try {
         const {error} = await customerJoiSchema.validate(req.body)
-        if (error) return res.send(error.details[0].message);
+        if (error) return res.send(error.details[0].message)
         let newcustomer = new CustomerModel({
             firstName: req.body.firstName,
             lastName: req.body.lastName,
