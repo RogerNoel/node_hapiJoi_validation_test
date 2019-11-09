@@ -1,23 +1,49 @@
-const http = require('http');
 const mongoose = require('mongoose')
+const express = require('express')
+const app = express()
 
-mongoose.connect('mongodb:localhost:27017/hapijoi', {useNewUrlParser: true});
+mongoose.connect('mongodb://localhost/hapijoi', 
+    {
+        useNewUrlParser: true, 
+        useUnifiedTopology: true
+})
+.then(()=>{console.log('connected to mongodb')})
+.catch(err => console.log(err))
 
-const humanSchema = new mongoose.Schema({
-    FirstName: String,
+const customerSchema = new mongoose.Schema({
+    firstName: String,
     lastName: String,
     age: Number,
     isMarried: Boolean
 });
 
-const HumanModel = mongoose.model('human', humanSchema);
+const CustomerModel = mongoose.model('customer', customerSchema);
 
+app.use(express.json())
 
-const server = http.createServer((req, res)=>{
-    const serverState = res.end('server ON')
-    console.log(serverState)
+app.get('/', (req, res) => res.send('Hello World!'))
+
+app.get('/customers', async (req, res)=>{
+    const customers = await CustomerModel.find()
+    res.send(customers)
 })
 
-server.listen(3000,()=>{
-    console.log('server listening on port 3000')
+app.post('/customer', async (req, res)=>{
+    try {
+        let newcustomer = new CustomerModel({
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            age: req.body.age,
+            isMarried: req.body.isMarried
+        })
+        newcustomer = await newcustomer.save()
+        res.send(newcustomer)
+    }
+    catch(err) {
+        console.log('error', err)
+        res.status(400).send('bad request')
+    }
 })
+
+const port = process.env.PORT || 3000
+app.listen(port, () => console.log(`Listening on port ${port} !`))
