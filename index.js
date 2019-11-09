@@ -1,6 +1,7 @@
-const mongoose = require('mongoose')
-const express = require('express')
-const app = express()
+const mongoose = require('mongoose');
+const express = require('express');
+const app = express();
+const Joi = require('@hapi/joi');
 
 mongoose.connect('mongodb://localhost/hapijoi', 
     {
@@ -14,10 +15,17 @@ const customerSchema = new mongoose.Schema({
     firstName: String,
     lastName: String,
     age: Number,
-    isMarried: Boolean
+    isMarried: {type: Boolean, default: false}
 });
 
 const CustomerModel = mongoose.model('customer', customerSchema);
+
+const customerJoiSchema = Joi.object({
+    lastName: Joi.string().min(4).max(20).required(),
+    firstName: Joi.string().min(3).max(20).required(),
+    age: Joi.number().required(),
+    isMarried: Joi.boolean()
+})
 
 app.use(express.json())
 
@@ -30,6 +38,8 @@ app.get('/customers', async (req, res)=>{
 
 app.post('/customer', async (req, res)=>{
     try {
+        const {error} = await customerJoiSchema.validate(req.body)
+        if (error) return res.send(error.details[0].message)
         let newcustomer = new CustomerModel({
             firstName: req.body.firstName,
             lastName: req.body.lastName,
